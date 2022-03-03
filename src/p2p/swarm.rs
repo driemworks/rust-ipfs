@@ -485,7 +485,7 @@ mod tests {
         let (_, mut swarm1) = build_swarm();
         let (_, mut swarm2) = build_swarm();
 
-        let peer3_id = Keypair::generate_ed25519().public().into_peer_id();
+        let peer3_id = Keypair::generate_ed25519().public().to_peer_id();
 
         Swarm::listen_on(&mut swarm1, "/ip4/127.0.0.1/tcp/0".parse().unwrap()).unwrap();
 
@@ -581,7 +581,7 @@ mod tests {
 
     fn build_swarm() -> (PeerId, libp2p::swarm::Swarm<SwarmApi>) {
         let key = Keypair::generate_ed25519();
-        let peer_id = key.public().into_peer_id();
+        let peer_id = key.public().to_peer_id();
         let transport = build_transport(key).unwrap();
 
         let swarm = SwarmBuilder::new(transport, SwarmApi::default(), peer_id)

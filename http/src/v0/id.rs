@@ -39,7 +39,7 @@ async fn identity_query<T: IpfsTypes>(
 
     match ipfs.identity().await {
         Ok((public_key, addresses)) => {
-            let peer_id = public_key.clone().into_peer_id();
+            let peer_id = public_key.clone().to_peer_id();
             let id = peer_id.to_string();
             let public_key = Base64Pad.encode(public_key.into_protobuf_encoding());
 
