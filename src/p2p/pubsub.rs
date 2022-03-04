@@ -12,7 +12,7 @@ use libp2p::core::{
     Multiaddr, PeerId,
 };
 use libp2p::floodsub::{Floodsub, FloodsubConfig, FloodsubEvent, FloodsubMessage, Topic};
-use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters, ProtocolsHandler};
+use libp2p::swarm::{NetworkBehaviour, NetworkBehaviourAction, PollParameters, ProtocolsHandler, IntoProtocolsHandler };
 
 /// Currently a thin wrapper around Floodsub, perhaps supporting both Gossipsub and Floodsub later.
 /// Allows single subscription to a topic with only unbounded senders. Tracks the peers subscribed
@@ -286,16 +286,6 @@ impl NetworkBehaviour for Pubsub {
         self.floodsub.inject_event(peer_id, connection, event)
     }
 
-    fn inject_addr_reach_failure(
-        &mut self,
-        peer_id: Option<&PeerId>,
-        addr: &Multiaddr,
-        error: &dyn std::error::Error,
-    ) {
-        self.floodsub
-            .inject_addr_reach_failure(peer_id, addr, error)
-    }
-
     fn inject_dial_failure(&mut self, peer_id: &PeerId) {
         self.floodsub.inject_dial_failure(peer_id)
     }
@@ -320,7 +310,8 @@ impl NetworkBehaviour for Pubsub {
         &mut self,
         ctx: &mut Context,
         poll: &mut impl PollParameters,
-    ) -> Poll<PubsubNetworkBehaviourAction> {
+    ) -> Poll<NetworkBehaviourAction<Self::OutEvent, Self::ProtocolsHandler, <<Self::ProtocolsHandler as IntoProtocolsHandler>::Handler as ProtocolsHandler>::InEvent>>
+    {
         use futures::stream::StreamExt;
         use std::collections::hash_map::Entry;
 

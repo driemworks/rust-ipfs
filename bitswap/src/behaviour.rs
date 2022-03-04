@@ -290,7 +290,10 @@ impl NetworkBehaviour for Bitswap {
 
     #[allow(clippy::type_complexity)]
     fn poll(&mut self, ctx: &mut Context, _: &mut impl PollParameters)
-        -> Poll<NetworkBehaviourAction<<<Self::ProtocolsHandler as IntoProtocolsHandler>::Handler as ProtocolsHandler>::InEvent, Self::OutEvent>>
+        -> Poll<NetworkBehaviourAction<
+            <<Self::ProtocolsHandler as IntoProtocolsHandler>::Handler as ProtocolsHandler>::InEvent, 
+            Self::OutEvent>
+        >
     {
         use futures::stream::StreamExt;
 
