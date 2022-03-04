@@ -13,9 +13,10 @@ use fnv::FnvHashSet;
 use futures::channel::mpsc::{unbounded, UnboundedReceiver, UnboundedSender};
 use hash_hasher::HashedMap;
 use libp2p_core::{connection::ConnectionId, Multiaddr, PeerId};
-use libp2p_swarm::protocols_handler::{IntoProtocolsHandler, OneShotHandler, ProtocolsHandler};
+use libp2p_swarm::protocols_handler::{OneShotHandler, OneShotHandlerConfig, SubstreamProtocol};
+use libp2p_swarm::dial_opts::DialOpts;
 use libp2p_swarm::{
-    DialPeerCondition, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
+    NetworkBehaviour, NetworkBehaviourAction, NotifyHandler, PollParameters,
 };
 use std::task::{Context, Poll};
 use std::{
@@ -88,7 +89,7 @@ impl Stats {
 /// Network behaviour that handles sending and receiving IPFS blocks.
 pub struct Bitswap {
     /// Queue of events to report to the user.
-    events: VecDeque<NetworkBehaviourAction<Message, BitswapEvent>>,
+    events: VecDeque<NetworkBehaviourAction<BitswapEvent, OneShotHandler<BitswapConfig, Message, MessageWrapper>>>,
     /// List of prospect peers to connect to.
     target_peers: FnvHashSet<PeerId>,
     /// Ledger
@@ -150,9 +151,12 @@ impl Bitswap {
     /// Called from Kademlia behaviour.
     pub fn connect(&mut self, peer_id: PeerId) {
         if self.target_peers.insert(peer_id) {
-            self.events.push_back(NetworkBehaviourAction::DialPeer {
-                peer_id,
-                condition: DialPeerCondition::Disconnected,
+            let osh_config = OneShotHandlerConfig::default();
+            let subsprot = SubstreamProtocol::new(BitswapConfig::default(), ());
+
+            self.events.push_back(NetworkBehaviourAction::Dial {
+                opts: DialOpts::peer_id(peer_id).build(),
+                handler: OneShotHandler::new(subsprot, osh_config)
             });
         }
     }
@@ -290,7 +294,7 @@ impl NetworkBehaviour for Bitswap {
 
     #[allow(clippy::type_complexity)]
     fn poll(&mut self, ctx: &mut Context, _: &mut impl PollParameters)
-        -> Poll<NetworkBehaviourAction<<<Self::ProtocolsHandler as IntoProtocolsHandler>::Handler as ProtocolsHandler>::InEvent, Self::OutEvent>>
+        -> Poll<NetworkBehaviourAction<Self::OutEvent, Self::ProtocolsHandler>>
     {
         use futures::stream::StreamExt;
 
